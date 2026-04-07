@@ -1,0 +1,6 @@
+{
+  "appId": "com.ert.game",
+  "appName": "ERT",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
