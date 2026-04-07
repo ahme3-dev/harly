@@ -1,1 +1,1924 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>رعب الغابة - النسخة المطورة جداً</title>
+    <style>
+        /* ======================= القسم الأول: CSS (الأنماط والواجهة) ======================= */
+        body { margin: 0; overflow: hidden; background-color: #050505; touch-action: none; font-family: sans-serif; }
+        canvas { display: block; }
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; padding: 10px; box-sizing: border-box; z-index: 10;
+        }
+        #low-energy-flash {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 0, 0.15); pointer-events: none;
+            display: none; z-index: 5;
+        }
+        #hunger-warning {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            color: #ff4444; font-size: 24px; font-weight: bold;
+            display: none; z-index: 11; text-shadow: 0 0 5px black;
+        }
+        #run-warning {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            color: #ff4444; font-size: 24px; font-weight: bold;
+            display: none; z-index: 11; text-shadow: 0 0 5px black;
+            pointer-events: none;
+        }
+        #joystick-container {
+            position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px;
+            background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto;
+            border: 2px solid rgba(255,255,255,0.3);
+            transition: all 0.3s;
+        }
+        #joystick-stick {
+            position: absolute; top: 35px; left: 35px; width: 50px; height: 50px;
+            background: rgba(255,255,255,0.5); border-radius: 50%;
+        }
+        .touch-btn {
+            position: absolute; width: 80px; height: 80px;
+            border-radius: 50%; pointer-events: auto;
+            display: flex; justify-content: center; align-items: center;
+            color: white; font-weight: bold; border: 2px solid white; user-select: none;
+            transition: all 0.3s;
+        }
+        #throw-btn { bottom: 40px; right: 40px; background: rgba(0,0,255,0.4); }
+        #speed-btn { bottom: 140px; right: 40px; background: rgba(0,180,0,0.4); }
+        #map-icon {
+            display: none; position: absolute; top: 20px; left: 20px;
+            background: none; border: none; width: 60px; height: 60px;
+            font-size: 50px; cursor: pointer; z-index: 15; pointer-events: auto;
+        }
+        #action-btn {
+            display: none; bottom: 50px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 165, 0, 0.8); width: 100px; height: 100px;
+            font-size: 1.2em; box-shadow: 0 0 20px rgba(255, 165, 0, 0.5);
+        }
+        .bar-container { width: 180px; height: 12px; background: #222; border: 1px solid #555; border-radius: 5px; overflow: hidden; margin-bottom: 5px; pointer-events: none; }
+        #hunger-bar { width: 100%; height: 100%; background: #ff4444; transition: width 0.1s; }
+        #win-bar { width: 0%; height: 100%; background: #00ff00; transition: width 0.1s; }
+        #win-container { display: none; }
+        .menu-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); display: none; flex-direction: column;
+            justify-content: center; align-items: center; pointer-events: auto; z-index: 20;
+        }
+        #main-menu { display: flex; }
+        .btn { padding: 15px 30px; background: #900; color: white; border: none; border-radius: 5px; font-size: 20px; cursor: pointer; margin-top: 15px; min-width: 200px; transition: 0.2s; }
+        .btn:hover { background: #b00; transform: scale(1.05); }
+        body.left-handed #joystick-container { left: auto; right: 40px; }
+        body.left-handed #throw-btn { right: auto; left: 40px; }
+        body.left-handed #speed-btn { right: auto; left: 40px; }
+        body.left-handed #map-icon { left: auto; right: 20px; }
+        .tips-text { color: #ccc; text-align: center; max-width: 80%; line-height: 1.8; font-size: 18px; }
+        #difficulty-select { margin-top: 20px; padding: 10px; font-size: 18px; background: #333; color: white; border: 1px solid #777; border-radius: 5px; margin-bottom: 10px; }
+        #jumpscare-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; display: none; justify-content: center; align-items: center; z-index: 30;
+        }
+        #jumpscare-face {
+            width: 100%; height: 100%; background: radial-gradient(circle, #ff0000 10%, #000000 80%);
+            display: flex; justify-content: center; align-items: center; font-size: 150px;
+        }
+        #servant-jumpscare-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; display: none; justify-content: center; align-items: center; z-index: 35;
+        }
+        #servant-jumpscare-face {
+            width: 100%; height: 100%; background: radial-gradient(circle, #550000 10%, #000000 80%);
+            display: flex; justify-content: center; align-items: center; font-size: 150px;
+        }
+        @keyframes scaryShake {
+            0% { transform: translate(0, 0) scale(1.3); filter: brightness(1); }
+            20% { transform: translate(-10px, 10px) scale(1.32) rotate(-1deg); }
+            40% { transform: translate(10px, -10px) scale(1.3) rotate(1deg); filter: brightness(1.2); }
+            60% { transform: translate(-10px, -10px) scale(1.32) rotate(-1deg); }
+            80% { transform: translate(10px, 10px) scale(1.3) rotate(1deg); filter: brightness(1.1); }
+            100% { transform: translate(0, 0) scale(1.3); filter: brightness(1); }
+        }
+        #map-viewer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); display: none; z-index: 40;
+            justify-content: center; align-items: center; flex-direction: column; pointer-events: auto;
+        }
+        #map-image { max-width: 90%; max-height: 80%; border: 5px solid #444; border-radius: 5px; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
+        #close-map { position: absolute; top: 20px; right: 30px; color: white; font-size: 50px; cursor: pointer; font-weight: bold; background: none; border: none; padding: 10px; }
+        #skull-counter {
+            position: absolute; top: 20px; right: 20px; color: gold; font-size: 28px;
+            font-weight: bold; text-shadow: 0 0 5px black; z-index: 12;
+            pointer-events: none; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 30px;
+        }
+        .notification {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #00cc00; color: white; padding: 12px 25px; border-radius: 40px;
+            font-weight: bold; z-index: 100; text-align: center;
+            box-shadow: 0 0 20px #00ff00; animation: fadeInOut 3s ease forwards;
+            pointer-events: none; font-size: 18px; white-space: nowrap;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; top: 0; }
+            10% { opacity: 1; top: 20px; }
+            80% { opacity: 1; top: 20px; }
+            100% { opacity: 0; top: 0; display: none; }
+        }
+        .achievement-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 90%; max-height: 60vh; overflow-y: auto; padding: 10px; margin: 20px 0; }
+        .achievement-card { background: #222; border-radius: 10px; padding: 10px; color: white; text-align: center; border: 1px solid #555; }
+        .achievement-card.locked { opacity: 0.5; filter: grayscale(0.8); }
+        .achievement-card h3 { margin: 5px 0; font-size: 16px; }
+        .achievement-card p { margin: 5px; font-size: 12px; color: gold; }
+        .claim-btn { background: #ff9900; border: none; padding: 5px 15px; border-radius: 20px; color: black; font-weight: bold; cursor: pointer; margin-top: 8px; }
+        .claim-btn.claimed { background: #555; cursor: default; }
+        .shop-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 90%; max-height: 50vh; overflow-y: auto; margin: 20px; }
+        .shop-item { background: #2a2a2a; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid gold; }
+        .buy-btn { background: #4caf50; border: none; padding: 5px 15px; border-radius: 20px; cursor: pointer; margin-top: 8px; color: white; }
+        .buy-btn.disabled { background: #666; cursor: not-allowed; }
+        .equipped { background: #ffaa00; color: black; }
+        #nav-buttons { display: flex; gap: 20px; margin-bottom: 20px; }
+        .nav-tab { background: #444; padding: 8px 20px; border-radius: 30px; cursor: pointer; }
+        .nav-tab.active { background: #900; }
+    </style>
+</head>
+<body>
+    <!-- ======================= القسم الثاني: HTML (هيكل اللعبة والعناصر) ======================= -->
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui-layer">
+        <div id="low-energy-flash"></div>
+        <div id="hunger-warning">أنت جائع!</div>
+        <div id="run-warning">أركض !</div>
+        <div class="bar-container" id="hunger-container"><div id="hunger-bar"></div></div>
+        <div class="bar-container" id="win-container"><div id="win-bar"></div></div>
+        <div id="joystick-container"><div id="joystick-stick"></div></div>
+        <div class="touch-btn" id="action-btn">إمساك</div>
+        <div class="touch-btn" id="throw-btn">رمي</div>
+        <div class="touch-btn" id="speed-btn">ركض</div>
+        <div class="touch-btn" id="map-icon">🗺️</div>
+         <div id="skull-counter">💀 0</div>
+                 <div id="score-counter" style="position: absolute; top: 70px; right: 20px; color: white; font-size: 24px; font-weight: bold; text-shadow: 0 0 5px black; z-index: 12; pointer-events: none; display: none;">🏆 السكور: 0</div>
+                     <div id="high-score-counter" style="position: absolute; top: 100px; right: 20px; color: gold; font-size: 20px; font-weight: bold; text-shadow: 0 0 5px black; z-index: 12; pointer-events: none; display: none;">👑 أعلى سكور: 0</div>
 
+        <button id="ingame-back-btn" style="position:absolute; top:20px; left:50%; transform:translateX(-50%); pointer-events:auto; background:rgba(0,0,0,0.5); color:white; border:1px solid #777; padding:5px 15px; border-radius:20px; z-index:15;" onclick="if(confirm('هل تريد العودة للقائمة الرئيسية؟')){location.reload();}">🏳️ استسلام</button>
+
+   </div>
+
+    <div id="map-viewer">
+        <button id="close-map">&times;</button>
+        <img id="map-image" src="Map.png" alt="الخريطة">
+    </div>
+
+    <div id="main-menu" class="menu-screen">
+        <h1 style="color:red; font-size: 60px; margin: 0; text-shadow: 0 0 10px red;">ERT</h1>
+        <p style="color:#ccc; font-size: 20px; margin-top: 5px; margin-bottom: 30px;">Eat, Run, Throw</p>
+            <button class="btn" onclick="showMenu('mode-menu')">ابدأ</button>
+    <button class="btn" onclick="showMenu('settings-menu')">الإعدادات</button>
+        <button class="btn" onclick="showMenu('tips-menu')">نصائح</button>
+        <button class="btn" onclick="showMenu('achievements-shop-menu')">🏆 الإنجازات والمتجر</button>
+    </div>
+        <div id="mode-menu" class="menu-screen">
+        <h2 style="color:red;">اختر وضع اللعب</h2>
+        <button class="btn" onclick="selectMode('normal')">الوضع العادي</button>
+        <button class="btn" onclick="selectMode('score')">وضع السكور</button>
+            <button class="btn" onclick="selectMode('nightmare')">وضع الكابوس 🩸</button>
+    <button class="btn" onclick="showMenu('main-menu')" style="background: #444; margin-top: 20px;">رجوع</button>
+    </div>
+
+    <!-- شاشة دخول الكابوس الجديدة -->
+    <div id="nightmare-intro-screen" class="menu-screen" style="background: black; z-index: 60; display: none; justify-content: center; align-items: center;">
+        <h1 id="nightmare-intro-text" style="color: red; font-size: 30px; text-align: center; opacity: 0; transition: opacity 2s; text-shadow: 0 0 10px red;">لقد عدت…  بعد فوات الأوان لتصحيح ما حدث</h1>
+    </div>
+
+    <div id="difficulty-menu" class="menu-screen">
+        <h2 style="color:red;">اختر المستوى</h2>
+        <select id="difficulty-select">
+            <option value="easy">المستوى: سهل (12 حجر)</option>
+            <option value="normal">المستوى: متوسط (8 حجر)</option>
+            <option value="hard" selected>المستوى: صعب (5 حجر)</option>
+            <option value="impossible">المستوى: مستحيل (5 حجر)</option>
+        </select>
+        <button class="btn" id="start-btn">العب</button>
+        <button class="btn" onclick="showMenu('main-menu')" style="background: #444;">رجوع</button>
+    </div>
+
+    <div id="settings-menu" class="menu-screen">
+        <h2 style="color:red;">الإعدادات</h2>
+        <label style="color:white; font-size: 20px; margin: 15px 0;">
+            الشخصية:
+            <select id="character-select" style="font-size: 18px; padding: 5px; background: #333; color: white; border: 1px solid #777; border-radius: 5px;">
+                <option value="claire">كلير (Claire)</option>
+                <option value="clara">كلارا (Clara)</option>
+                <!-- سيتم إضافة الشخصيات المفتوحة هنا ديناميكياً عبر JavaScript -->
+            </select>
+        </label>
+        <label style="color:white; font-size: 20px; margin: 15px 0;">
+            مستوى الصوت:
+            <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" style="vertical-align: middle;">
+        </label>
+        <label style="color:white; font-size: 20px; margin: 15px 0; cursor: pointer;">
+            <input type="checkbox" id="left-hand-toggle" style="transform: scale(1.5); margin-left: 10px;">
+            وضع اليد اليسرى (عكس الأزرار)
+        </label>
+        <label style="color:white; font-size: 20px; margin: 15px 0; cursor: pointer;">
+            <input type="checkbox" id="landscape-toggle" style="transform: scale(1.5); margin-left: 10px;">
+            اللعب بالعرض (Landscape)
+        </label>
+        <div id="special-gift-section" style="margin-top: 20px; border-top: 1px solid #444; padding-top: 20px; width: 100%; text-align: center;">
+            <h3 style="color: gold; margin-bottom: 10px;">الهدايا للمميزين 🎁</h3>
+            <input type="text" id="gift-code-input" placeholder="اكتب الجملة هنا..." style="padding: 10px; width: 80%; border-radius: 5px; border: 1px solid gold; background: #222; color: white; text-align: center; font-size: 16px;">
+            <button class="btn" id="claim-gift-btn" style="min-width: 100px; padding: 10px; font-size: 16px; background: #008000; margin-top: 10px;">تفعيل الهدية</button>
+        </div>
+         <button class="btn" onclick="if(confirm('سيتم مسح كل الجماجم والشخصيات والإنجازات! هل أنت متأكد؟')){localStorage.clear(); location.reload();}" style="background: #333; color: #777; font-size: 14px; margin-top: 20px;">إعادة تعيين كل البيانات ⚠️</button>
+
+        <button class="btn" onclick="showMenu('main-menu')" style="background: #444; margin-top: 30px;">رجوع</button>
+    </div>
+
+    <div id="tips-menu" class="menu-screen">
+        <h2 style="color:red;">نصائح</h2>
+        <p class="tips-text">
+            خذ اللحم من بيت الوحش وعد الى بيتك للفوز !<br>
+            لا تنسى التقاط الخريطة انها في بيتك !<br>
+            اعثر على "التفاحة الذهبية" لتزيد شريط الجوع!<br>
+            ارتفاع صوت نبضات قلبك دليل على وجود أحد الخدم قريب منك<br>
+            صوت نبضات قلب مرفق بتنفس دليل على اقتراب الوحش الرئيسي !<br>
+            تناول التفاح لكي لا تموت من الجوع  !
+        </p>
+        <button class="btn" onclick="showMenu('main-menu')" style="background: #444;">رجوع</button>
+    </div>
+
+    <div id="achievements-shop-menu" class="menu-screen">
+        <div id="nav-buttons">
+            <div class="nav-tab active" onclick="switchAchievementTab('achievements')">🏅 الإنجازات</div>
+            <div class="nav-tab" onclick="switchAchievementTab('shop')">🛒 المتجر</div>
+            <div class="nav-tab" onclick="switchAchievementTab('properties')">✨ الخاصيات</div>
+        </div>
+        <div id="achievements-panel" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <h2 style="color:gold;">الإنجازات</h2>
+            <div id="achievements-list" class="achievement-grid"></div>
+        </div>
+        <div id="shop-panel" style="width: 100%; display: none; flex-direction: column; align-items: center;">
+            <h2 style="color:gold;">متجر الشخصيات</h2>
+            <div id="shop-list" class="shop-grid"></div>
+            <p style="color:white;">رصيدك: <span id="shop-skull-display">0</span> 💀</p>
+        </div>
+        <div id="properties-panel" style="width: 100%; display: none; flex-direction: column; align-items: center;">
+            <h2 style="color:gold;">الخاصيات</h2>
+            <div id="properties-list" class="shop-grid"></div>
+            <p style="color:white;">رصيدك: <span id="prop-skull-display">0</span> 💀</p>
+        </div>
+        <button class="btn" onclick="showMenu('main-menu')" style="background: #444; margin-top: 20px;">رجوع</button>
+    </div>
+
+    <div id="screens" class="menu-screen">
+        <h1 style="color:red;" id="game-title">رعب الغابة</h1>
+        <p class="tips-text" id="game-over-tips">
+            خذ اللحم من بيت الوحش وعد الى بيتك للفوز !<br>
+            لا تنسى التقاط الخريطة انها في بيتك !<br>
+            اعثر على "التفاحة الذهبية" لتزيد شريط الجوع!<br>
+            ارتفاع صوت نبضات قلبك دليل على وجود أحد الخدم قريب منك<br>
+            صوت نبضات قلب مرفق بتنفس دليل على اقتراب الوحش الرئيسي !<br>
+            تناول التفاح لكي لا تموت من الجوع  !
+        </p>
+        <button class="btn" onclick="showMenu('difficulty-menu')">حاول مرة أخرى</button>
+        <button class="btn" onclick="showMenu('main-menu')" style="background: #444;">القائمة الرئيسية</button>
+    </div>
+
+    <div id="jumpscare-screen"><div id="jumpscare-face"></div></div>
+    <div id="servant-jumpscare-screen"><div id="servant-jumpscare-face"></div></div>
+
+    <script>// ======================= القسم الثاني: المتغيرات والإعدادات الأساسية ونظام الإنجازات والمتجر =======================
+
+// --- إعدادات الصوت والعالم ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+// تفعيل أعلى جودة لمعالجة الصور داخل الكود
+ctx.imageSmoothingEnabled = true;
+ctx.imageSmoothingQuality = 'high'; // هذا هو السطر الذي يجعل الدقة High
+
+let WORLD = { width: 4000, height: 3000 };
+let view = { x: 0, y: 0 };
+let gameState = 'menu';
+let globalVolume = 1.0;
+
+// --- قائمة الشخصيات المتاحة (الأساسية + التي يتم فتحها) ---
+const allCharacters = [
+    { id: 'claire', name: 'كلير (Claire)', baseSpeed: 5, special: 'none', sound: 'Claire_breath.mp3' },
+    { id: 'clara', name: 'كلارا (Clara)', baseSpeed: 5, special: 'none', sound: 'Clara_breath.mp3' },
+    { id: 'sprinter', name: 'The Sprinter', baseSpeed: 6, special: 'speed', sound: 'Claire_breath.mp3' },
+    { id: 'master', name: 'The Master', baseSpeed: 5, special: 'immune', sound: 'Claire_breath.mp3' },
+    { id: 'sage', name: 'The Sage', baseSpeed: 5, special: 'stealth', sound: 'Claire_breath.mp3' },
+    { id: 'phantom', name: 'The Phantom', baseSpeed: 5, special: 'stealthRange', sound: 'Claire_breath.mp3' },
+    { id: 'madman', name: 'The Madman', baseSpeed: 5, special: 'madRun', sound: 'Claire_breath.mp3' }
+];
+
+// --- نظام الحفظ الدائم (localStorage) ---
+let playerSkulls = 100; // 
+let highScore = 0;
+let stoneCrates = [];
+let currentScoreLevel = 0;
+
+let unlockedCharacters = ['claire', 'clara']; // الشخصيات المفتوحة
+let equippedCharacter = 'claire';
+let properties = {
+    extraLives: { owned: false, active: false }
+};
+let currentLivesInGame = 0;
+
+let achievements = {
+    goldenHunter: { name: "المكتشف الذهبي", desc: "الفوز بعد التقاط التفاحة الذهبية", reward: 250, achieved: false, claimed: false, condition: false },
+    noMap: { name: "لا أحتاج لخرائط", desc: "الفوز دون لمس الخريطة (متوسط+)", reward: 400, achieved: false, claimed: false, condition: false },
+    sniper: { name: "قناص الخدم", desc: "إصابة 3 خدم بالأحجار في جولة", reward: 500, achieved: false, claimed: false, condition: false },
+    noStop: { name: "بلا توقف", desc: "الفوز دون توقف السرعة (متوسط+)", reward: 700, achieved: false, claimed: false, condition: false },
+    houseThief: { name: "سارق المنازل", desc: "البقاء في بيت الوحش 20ث (صعب+)", reward: 1000, achieved: false, claimed: false, condition: false },
+    edge: { name: "على الحافة", desc: "الفوز بجوع <5% (صعب+)", reward: 1200, achieved: false, claimed: false, condition: false },
+    untouchable: { name: "لا تلمسني", desc: "الفوز دون تصادم مع الخدم (صعب+)", reward: 1500, achieved: false, claimed: false, condition: false },
+    economy: { name: "الاقتصاد العسكري", desc: "الفوز دون رمي حجر (صعب+)", reward: 2000, achieved: false, claimed: false, condition: false },
+    glutton: { name: "النهم", desc: "الفوز بأكل كل التفاح (مستحيل)", reward: 3500, achieved: false, claimed: false, condition: false },
+    breathOfDeath: { name: "أنفاس الموت", desc: "مطاردة 60ث ثم الفوز (مستحيل)", reward: 5000, achieved: false, claimed: false, condition: false }
+};
+
+// --- دالة تحديث قائمة الشخصيات في الإعدادات ---
+function updateCharacterSelectList() {
+    const select = document.getElementById('character-select');
+    const currentValue = select.value;
+    select.innerHTML = '';
+    allCharacters.forEach(char => {
+        if (unlockedCharacters.includes(char.id)) {
+            const option = document.createElement('option');
+            option.value = char.id;
+            option.textContent = char.name;
+            select.appendChild(option);
+        }
+    });
+    if (unlockedCharacters.includes(currentValue)) {
+        select.value = currentValue;
+    } else if (unlockedCharacters.includes(equippedCharacter)) {
+        select.value = equippedCharacter;
+    } else {
+        select.value = 'claire';
+    }
+}
+
+function loadSaveData() {
+    let savedHighScore = localStorage.getItem('ert_highscore');
+    if(savedHighScore) highScore = parseInt(savedHighScore);
+
+    let savedSkulls = localStorage.getItem('ert_skulls');
+    if(savedSkulls) playerSkulls = parseInt(savedSkulls);
+    let savedUnlocked = localStorage.getItem('ert_unlocked');
+    if(savedUnlocked) unlockedCharacters = JSON.parse(savedUnlocked);
+    let savedEquipped = localStorage.getItem('ert_equipped');
+    if(savedEquipped) equippedCharacter = savedEquipped;
+    let savedAch = localStorage.getItem('ert_achievements');
+    if(savedAch) {
+        let saved = JSON.parse(savedAch);
+        for(let key in saved) if(achievements[key]) { achievements[key].achieved = saved[key].achieved; achievements[key].claimed = saved[key].claimed; }
+    }
+    let savedProps = localStorage.getItem('ert_properties');
+    if(savedProps) properties = JSON.parse(savedProps);
+    updateSkullUI();
+    updateCharacterSelectList();
+}
+
+function saveSkulls() { localStorage.setItem('ert_skulls', playerSkulls); updateSkullUI(); }
+function saveUnlocked() { localStorage.setItem('ert_unlocked', JSON.stringify(unlockedCharacters)); updateCharacterSelectList(); }
+function saveAchievements() { localStorage.setItem('ert_achievements', JSON.stringify(achievements)); }
+function saveProperties() { localStorage.setItem('ert_properties', JSON.stringify(properties)); }
+function updateSkullUI() { 
+    document.getElementById('skull-counter').innerHTML = `💀 ${playerSkulls}`; 
+    if(document.getElementById('shop-skull-display')) document.getElementById('shop-skull-display').innerText = playerSkulls; 
+    if(document.getElementById('prop-skull-display')) document.getElementById('prop-skull-display').innerText = playerSkulls; 
+}
+function addSkulls(amount) { playerSkulls += amount; saveSkulls(); }
+
+// --- نظام الإشعارات الفورية ---
+function showNotification(msg) {
+    let notif = document.createElement('div'); 
+    notif.className = 'notification'; 
+    notif.innerText = msg;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 3000);
+}
+
+// --- متغيرات تتبع الإنجازات أثناء الجولة ---
+let runTimeWithoutStop = true, lastMoveTime = 0;
+let servantsHitThisRun = 0, stonesThrownThisRun = 0, applesEatenCount = 0, totalApplesInMap = 0;
+let touchedMapThisRun = false, goldenEatenThisRun = false, chasedTimeThisRun = 0, lastChaseUpdate = 0;
+let inMonsterHouseTimer = 0, servantCollisionHappened = false, minHungerReached = 100;
+let currentDifficultyLevel = 'hard';
+let gameMode = 'normal';
+let scorePoints = 0;
+let survivalStartTime = 0;
+
+// متغيرات وضع الكابوس
+let nightmarePhase = 0; // 0: جمع العناصر، 1: البحث عن المفتاح، 2: الهروب
+let nightmareItems = [];
+let nightmareKey = { x: 0, y: 0, picked: false };
+let theGate = { x: 200, y: 200, w: 150, h: 20 };
+let bloodSpots = [];
+let isScreenDarkened = false;
+let screenDarknessLevel = 0;
+
+
+function resetRunTrackers() {
+    runTimeWithoutStop = true; lastMoveTime = Date.now();
+    servantsHitThisRun = 0; stonesThrownThisRun = 0; applesEatenCount = 0; 
+    touchedMapThisRun = false; goldenEatenThisRun = false;
+    chasedTimeThisRun = 0; lastChaseUpdate = 0; inMonsterHouseTimer = 0; 
+    servantCollisionHappened = false; minHungerReached = 100;
+}
+
+function checkAchievementsDuringRun(win) {
+    if(!win) return;
+    let diff = currentDifficultyLevel;
+    if(achievements.goldenHunter.achieved===false && goldenEatenThisRun && !achievements.goldenHunter.claimed) { 
+        achievements.goldenHunter.achieved=true; showNotification("🏆 إنجاز: المكتشف الذهبي"); saveAchievements(); 
+    }
+    if(achievements.noMap.achieved===false && !touchedMapThisRun && (diff==='normal'||diff==='hard'||diff==='impossible') && !achievements.noMap.claimed) { 
+        achievements.noMap.achieved=true; showNotification("🏆 إنجاز: لا أحتاج لخرائط"); saveAchievements(); 
+    }
+    if(achievements.sniper.achieved===false && servantsHitThisRun >=3 && !achievements.sniper.claimed) { 
+        achievements.sniper.achieved=true; showNotification("🏆 إنجاز: قناص الخدم"); saveAchievements(); 
+    }
+    if(achievements.noStop.achieved===false && runTimeWithoutStop && (diff==='normal'||diff==='hard'||diff==='impossible') && !achievements.noStop.claimed) { 
+        achievements.noStop.achieved=true; showNotification("🏆 إنجاز: بلا توقف"); saveAchievements(); 
+    }
+    if(achievements.houseThief.achieved===false && inMonsterHouseTimer >= 1200 && (diff==='hard'||diff==='impossible') && !achievements.houseThief.claimed) { 
+        achievements.houseThief.achieved=true; showNotification("🏆 إنجاز: سارق المنازل"); saveAchievements(); 
+    }
+    if(achievements.edge.achieved===false && minHungerReached < 5 && (diff==='hard'||diff==='impossible') && !achievements.edge.claimed) { 
+        achievements.edge.achieved=true; showNotification("🏆 إنجاز: على الحافة"); saveAchievements(); 
+    }
+    if(achievements.untouchable.achieved===false && !servantCollisionHappened && (diff==='hard'||diff==='impossible') && !achievements.untouchable.claimed) { 
+        achievements.untouchable.achieved=true; showNotification("🏆 إنجاز: لا تلمسني"); saveAchievements(); 
+    }
+    if(achievements.economy.achieved===false && stonesThrownThisRun === 0 && (diff==='hard'||diff==='impossible') && !achievements.economy.claimed) { 
+        achievements.economy.achieved=true; showNotification("🏆 إنجاز: الاقتصاد العسكري"); saveAchievements(); 
+    }
+    if(achievements.glutton.achieved===false && applesEatenCount >= totalApplesInMap && diff==='impossible' && !achievements.glutton.claimed) { 
+        achievements.glutton.achieved=true; showNotification("🏆 إنجاز: النهم"); saveAchievements(); 
+    }
+    if(achievements.breathOfDeath.achieved===false && chasedTimeThisRun >= 60 && diff==='impossible' && !achievements.breathOfDeath.claimed) { 
+        achievements.breathOfDeath.achieved=true; showNotification("🏆 إنجاز: أنفاس الموت"); saveAchievements(); 
+    }
+}
+   function selectMode(mode) {
+    if (mode === 'score') {
+        if (!localStorage.getItem('ert_hard_won')) {
+            if (confirm('وضع السكور مقفل! يرجى الفوز بالوضع الصعب لفتحه.\nأو هل ترغب في شرائه الآن مقابل 2000 جمجمة؟ 💀')) {
+                if (playerSkulls >= 2000) {
+                    addSkulls(-2000);
+                    localStorage.setItem('ert_hard_won', 'true');
+                    showNotification("🔓 تم فتح وضع السكور بنجاح!");
+                } else {
+                    alert('عذراً، لا تملك جماجم كافية! (تحتاج 2000 جمجمة)');
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+    }
+    
+    if (mode === 'nightmare') {
+        if (!localStorage.getItem('ert_impossible_won')) {
+            if (confirm('وضع الكابوس 🩸 مقفل! يرجى الفوز بالوضع المستحيل لفتحه.\nأو هل ترغب في شرائه الآن مقابل 3500 جمجمة؟ 💀')) {
+                if (playerSkulls >= 3500) {
+                    addSkulls(-3500);
+                    localStorage.setItem('ert_impossible_won', 'true');
+                    showNotification("🔓 تم فتح وضع الكابوس 🩸 بنجاح!");
+                } else {
+                    alert('عذراً، لا تملك جماجم كافية! (تحتاج 3500 جمجمة)');
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+        
+        // تشغيل تأثير شاشة الكابوس
+        showMenu('nightmare-intro-screen');
+        let introText = document.getElementById('nightmare-intro-text');
+        introText.style.opacity = 1;
+        
+        let dadLaugh = new Audio('Dadlaugh.mp3');
+        dadLaugh.volume = globalVolume;
+        
+        setTimeout(() => { dadLaugh.play().catch(e=>{}); }, 1000);
+        
+        // الإخفاء والانتقال للعبة بعد 4 ثواني
+        setTimeout(() => {
+            introText.style.opacity = 0;
+            setTimeout(() => {
+                gameMode = mode;
+                showMenu('difficulty-menu');
+            }, 2000); // وقت التلاشي
+        }, 4000);
+        return;
+    }
+
+    gameMode = mode;
+    showMenu('difficulty-menu');
+}
+
+
+// --- وظائف عرض القوائم ---
+function showMenu(menuId) {
+    const menus = document.querySelectorAll('.menu-screen');
+    menus.forEach(m => m.style.display = 'none');
+    if (menuId) { 
+        document.getElementById(menuId).style.display = 'flex'; 
+        if (menuId !== 'screens' && menuId !== 'difficulty-menu') gameState = 'menu'; 
+    }
+    if(menuId === 'achievements-shop-menu') renderAchievementsAndShop();
+}
+
+function switchAchievementTab(tab) {
+    document.getElementById('achievements-panel').style.display = tab==='achievements' ? 'flex' : 'none';
+    document.getElementById('shop-panel').style.display = tab==='shop' ? 'flex' : 'none';
+    document.getElementById('properties-panel').style.display = tab==='properties' ? 'flex' : 'none';
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    if(tab==='achievements') document.querySelector('.nav-tab:nth-child(1)').classList.add('active');
+    else if(tab==='shop') document.querySelector('.nav-tab:nth-child(2)').classList.add('active');
+    else document.querySelector('.nav-tab:nth-child(3)').classList.add('active');
+}
+
+function renderAchievementsAndShop() {
+    let container = document.getElementById('achievements-list');
+    container.innerHTML = '';
+    for(let key in achievements) {
+        let a = achievements[key];
+        let card = document.createElement('div'); 
+        card.className = 'achievement-card' + (a.achieved ? '' : ' locked');
+        card.innerHTML = `<h3>${a.name}</h3><p>${a.desc}</p><p>💰 ${a.reward}</p>`;
+        if(a.achieved) {
+            let btn = document.createElement('button'); 
+            btn.innerText = a.claimed ? 'تمت المطالبة' : 'مطالبة'; 
+            btn.className = 'claim-btn' + (a.claimed ? ' claimed' : '');
+            if(!a.claimed) btn.onclick = () => { 
+                if(!a.claimed) { 
+                    addSkulls(a.reward); 
+                    a.claimed = true; 
+                    saveAchievements(); 
+                    renderAchievementsAndShop(); 
+                    showNotification(`+${a.reward} جمجمة!`); 
+                } 
+            };
+            card.appendChild(btn);
+        }
+        container.appendChild(card);
+    }
+    
+    let shopContainer = document.getElementById('shop-list');
+    shopContainer.innerHTML = '';
+    let shopChars = [
+        { id: 'sprinter', name: 'The Sprinter', price: 2000, desc: 'سرعة +20%', img: 'Sprinter.png' },
+        { id: 'master', name: 'The Master', price: 3500, desc: 'حصانة من هجمات الخدم', img: 'Master.png' },
+        { id: 'sage', name: 'The Sage', price: 5000, desc: 'يبدأ بالخريطة + تمويه 5ث', img: 'Sage.png' },
+           { id: 'phantom', name: 'The Phantom', price: 12000, desc: 'تقليل انتباه الوحش 40%', img: 'phantom.png' },
+        { id: 'madman', name: 'The Madman', price: 4500, desc: 'سرعة ركض +60% إذا اقترب الوحش جداً', img: 'Madman.png' }
+    ];
+ shopChars.forEach(ch => {
+        let owned = unlockedCharacters.includes(ch.id);
+        let equippedNow = (equippedCharacter === ch.id);
+        let item = document.createElement('div'); 
+        item.className = 'shop-item';
+        item.innerHTML = `<h3>${ch.name}</h3><p>${ch.desc}</p><p>💰 ${ch.price}</p>`;
+        if(!owned) {
+            let btn = document.createElement('button'); 
+            btn.innerText = 'شراء'; 
+            btn.className = 'buy-btn';
+                btn.onclick = () => { 
+                if(playerSkulls >= ch.price) { 
+                    if(confirm(`هل أنت متأكد من شراء ${ch.name} مقابل ${ch.price} 💀؟`)) {
+                        addSkulls(-ch.price); 
+                        unlockedCharacters.push(ch.id); 
+                        saveUnlocked(); 
+                        renderAchievementsAndShop(); 
+                        showNotification(`تم شراء ${ch.name}! أصبح متاحاً في قائمة الإعدادات`);
+                    }
+                } else showNotification('رصيد غير كاف'); 
+            };
+        item.appendChild(btn);
+        } else {
+            let btn = document.createElement('button'); 
+            btn.innerText = equippedNow ? 'مستخدم' : 'تجهيز'; 
+            btn.className = 'buy-btn' + (equippedNow ? ' equipped' : '');
+            if(!equippedNow) btn.onclick = () => { 
+                equippedCharacter = ch.id; 
+                localStorage.setItem('ert_equipped', equippedCharacter); 
+                renderAchievementsAndShop(); 
+                updateCharacterSelectList();
+                showNotification(`تم تجهيز ${ch.name}`);
+                // تحديث الصوت والصورة فوراً
+                updatePlayerSprite();
+                const charData = allCharacters.find(c => c.id === ch.id);
+                if(charData) breathSound.src = charData.sound;
+            };
+            item.appendChild(btn);
+          
+        }
+        shopContainer.appendChild(item);
+    });
+    document.getElementById('shop-skull-display').innerText = playerSkulls;
+
+    // رسم واجهة الخاصيات
+    let propContainer = document.getElementById('properties-list');
+    propContainer.innerHTML = '';
+    
+    let livesProp = document.createElement('div');
+    livesProp.className = 'shop-item';
+    livesProp.innerHTML = `<h3>❤️ الأرواح الثلاثة</h3><p>تعطيك 3 فرص للحياة وتنجيك من هجوم الوحش الرئيسي.</p>`;
+    
+    if(!properties.extraLives.owned) {
+        livesProp.innerHTML += `<p>سعر الشراء: 💰 5000</p>`;
+        let btn = document.createElement('button');
+        btn.innerText = 'شراء الخاصية';
+        btn.className = 'buy-btn';
+        btn.onclick = () => {
+            if(playerSkulls >= 5000) {
+                if(confirm('هل أنت متأكد من شراء خاصية الأرواح مقابل 5000 💀؟')) {
+                    addSkulls(-5000);
+                    properties.extraLives.owned = true;
+                    saveProperties();
+                    renderAchievementsAndShop();
+                    showNotification('تم شراء خاصية الأرواح بنجاح! يمكنك الآن تفعيلها.');
+                }
+            } else showNotification('رصيد غير كافٍ!');
+        };
+        livesProp.appendChild(btn);
+    } else {
+        livesProp.innerHTML += `<p>سعر التفعيل للجولة القادمة: 💰 500</p>`;
+        let btn = document.createElement('button');
+        btn.innerText = properties.extraLives.active ? 'مفعلة ✅' : 'تفعيل';
+        btn.className = 'buy-btn' + (properties.extraLives.active ? ' equipped' : '');
+        if(!properties.extraLives.active) {
+            btn.onclick = () => {
+                if(playerSkulls >= 500) {
+                    addSkulls(-500);
+                    properties.extraLives.active = true;
+                    saveProperties();
+                    renderAchievementsAndShop();
+                    showNotification('تم تفعيل 3 أرواح للجولة القادمة! ❤️');
+                } else showNotification('رصيد غير كافٍ!');
+            };
+        }
+        livesProp.appendChild(btn);
+    }
+    propContainer.appendChild(livesProp);
+    if(document.getElementById('prop-skull-display')) document.getElementById('prop-skull-display').innerText = playerSkulls;
+}
+
+// --- الصور (نفس إعدادات Claire.png و Clara.png) ---
+const playerSprite = new Image(); 
+const monsterSprite = new Image(); monsterSprite.src = 'Monster.png'; 
+const servantSprite = new Image(); servantSprite.src = 'Servants.png'; 
+const monsterNightmareSprite = new Image(); monsterNightmareSprite.src = 'Monster_nightmare.png';
+const servantNightmareSprite = new Image(); servantNightmareSprite.src = 'Servants_nightmare.png';
+
+// صور الشخصيات (كلها بنفس إعدادات Claire.png)
+const claireSprite = new Image(); claireSprite.src = 'Claire.png';
+const claraSprite = new Image(); claraSprite.src = 'Clara.png';
+const sprinterSprite = new Image(); sprinterSprite.src = 'Sprinter.png';
+const masterSprite = new Image(); masterSprite.src = 'Master.png';
+const sageSprite = new Image(); sageSprite.src = 'Sage.png';
+const phantomSprite = new Image(); phantomSprite.src = 'phantom.png';
+const madmanSprite = new Image(); madmanSprite.src = 'Madman.png';
+
+// تعيين الصورة الافتراضية
+playerSprite.src = 'Claire.png';
+
+let imagesLoaded = 0;
+const totalImages = 12;
+
+function onImageLoad() { 
+    imagesLoaded++; 
+    console.log(`تم تحميل الصورة ${imagesLoaded} من ${totalImages}`);
+}
+
+// تحميل كل الصور
+claireSprite.onload = onImageLoad;
+claraSprite.onload = onImageLoad;
+sprinterSprite.onload = onImageLoad;
+masterSprite.onload = onImageLoad;
+sageSprite.onload = onImageLoad;
+phantomSprite.onload = onImageLoad;
+madmanSprite.onload = onImageLoad;
+monsterSprite.onload = onImageLoad;
+servantSprite.onload = onImageLoad;
+playerSprite.onload = onImageLoad;
+monsterNightmareSprite.onload = onImageLoad;
+servantNightmareSprite.onload = onImageLoad;
+
+document.getElementById('jumpscare-face').appendChild(monsterSprite.cloneNode());
+document.getElementById('servant-jumpscare-face').appendChild(servantSprite.cloneNode()); 
+
+// دالة تحديث صورة اللاعب حسب الشخصية المختارة (نفس إعدادات Claire.png)
+function updatePlayerSprite() {
+    switch(equippedCharacter) {
+        case 'sprinter':
+            playerSprite.src = 'Sprinter.png';
+            break;
+        case 'master':
+            playerSprite.src = 'Master.png';
+            break;
+        case 'sage':
+            playerSprite.src = 'Sage.png';
+            break;
+        case 'phantom':
+            playerSprite.src = 'phantom.png';
+            break;
+        case 'madman':
+            playerSprite.src = 'Madman.png';
+            break;
+        case 'clara':
+            playerSprite.src = 'Clara.png';
+            break;
+        case 'claire':
+        default:
+            playerSprite.src = 'Claire.png';
+    }
+}
+
+// --- إعدادات الصعوبة ---
+const diffSettings = {
+    easy: { trees: 80, apples: 100, mSpeed: 2.0, mChase: 3.0, mAngry: 4.0, stones: 12 },
+    normal: { trees: 120, apples: 70, mSpeed: 2.5, mChase: 3.5, mAngry: 4.8, stones: 8 },
+    hard: { trees: 160, apples: 45, mSpeed: 3.0, mChase: 4.0, mAngry: 5.2, stones: 5 }, 
+    impossible: { trees: 250, apples: 25, mSpeed: 4.0, mChase: 5.5, mAngry: 6.8, stones: 5 }
+};
+let currentSettings = diffSettings.hard;
+
+// --- متغيرات اللعبة الأساسية ---
+let maxHunger = 100;
+const player = { x: 200, y: 200, rad: 30, speed: 5, hunger: 100, stones: 5, hasFood: false, angle: 0 };
+const monster = { x: 3500, y: 2500, rad: 90, speed: 3.0, chaseSpeed: 4.0, state: 'patrol', angle: 0, waitTimer: 0, targetX: 0, targetY: 0 }; 
+const cabin = { x: 100, y: 100, w: 100, h: 100 };
+let winTimer = 0; 
+let servants = [];
+let playerSlowTimer = 0;
+let isServantJumpscareActive = false;
+
+const monsterHouse = { x: 3700, y: 2700, w: 200, h: 200 };
+const houseWalls = [
+    {x: 3700, y: 2700, w: 200, h: 20}, {x: 3700, y: 2700, w: 20, h: 200},
+    {x: 3880, y: 2700, w: 20, h: 200}, {x: 3700, y: 2880, w: 40, h: 40},
+    {x: 3840, y: 2880, w: 40, h: 40}
+];
+
+const food = { x: 3800, y: 2800, rad: 25, grabbed: false, progress: 0 };
+let goldenApple = { x: 0, y: 0, r: 15, active: false };
+let mapItem = { x: 2000, y: 1500, rad: 20, pickedUp: false };
+let trees = []; let apples = []; let stones = []; let noises = [];
+
+// --- دوال spawn ---
+function spawnTrees() {
+    trees = [];
+    for(let i=0; i<currentSettings.trees; i++) {
+        let tx = Math.random() * (WORLD.width - 200) + 100;
+        let ty = Math.random() * (WORLD.height - 200) + 100;
+        if((tx < 500 && ty < 500) || (tx > 3500 && ty > 2500)) continue;
+        trees.push({x: tx, y: ty, r: Math.random() * 20 + 30});
+    }
+}
+
+function spawnApples() {
+    apples = [];
+    for(let i=0; i<currentSettings.apples; i++) { 
+        let ax = Math.random() * (WORLD.width - 200) + 100;
+        let ay = Math.random() * (WORLD.height - 200) + 100;
+        if((ax < 500 && ay < 500) || (ax > 3500 && ay > 2500)) continue;
+        apples.push({x: ax, y: ay, r: 8});
+    }
+    goldenApple.x = Math.random() * (WORLD.width - 400) + 200;
+    goldenApple.y = Math.random() * (WORLD.height - 400) + 200;
+    goldenApple.active = true;
+    mapItem.x = 150; mapItem.y = 150; mapItem.pickedUp = false;
+    totalApplesInMap = apples.length;
+}
+function spawnNightmareEntities() {
+    // دالة داخلية لاختيار مكان آمن للأدوات
+    function getSafePos() {
+        let x, y, safe;
+        do {
+            safe = true;
+            x = Math.random() * (WORLD.width - 600) + 300;
+            y = Math.random() * (WORLD.height - 600) + 300;
+            
+            // تجنب بيت الوحش (الزاوية السفلية اليمنى)
+            if (x > 3500 && y > 2500) safe = false;
+            // تجنب منطقة البداية للكوخ (الزاوية العلوية اليسرى)
+            if (x < 500 && y < 500) safe = false;
+            
+            // تجنب الرسبنة داخل الأشجار
+            if (safe) {
+                for (let i = 0; i < trees.length; i++) {
+                    if (Math.hypot(x - trees[i].x, y - trees[i].y) < trees[i].r + 30) {
+                        safe = false;
+                        break;
+                    }
+                }
+            }
+        } while (!safe);
+        return { x, y };
+    }
+
+    let p1 = getSafePos();
+    let p2 = getSafePos();
+    let p3 = getSafePos();
+
+    nightmareItems = [
+        { name: "مخطوطة", color: "#d4af37", x: p1.x, y: p1.y, picked: false },
+        { name: "عظام", color: "#e3dac9", x: p2.x, y: p2.y, picked: false },
+        { name: "بقايا الوحش", color: "#8b0000", x: p3.x, y: p3.y, picked: false }
+    ];
+    nightmareKey = { x: monsterHouse.x + 100, y: monsterHouse.y + 100, picked: false };
+    
+    bloodSpots = [];
+    for(let i=0; i<150; i++) {
+        bloodSpots.push({ x: Math.random() * WORLD.width, y: Math.random() * WORLD.height, r: Math.random() * 15 + 5 });
+    }
+}
+
+function spawnServants() {
+    servants = [];
+    let numServants = (gameMode === 'score') ? 5 : 3;
+    for(let i=0; i<numServants; i++) { 
+        servants.push({
+            x: Math.random() * (WORLD.width - 600) + 300, 
+            y: Math.random() * (WORLD.height - 600) + 300,
+            rad: 60, state: 'patrol', angle: 0, waitTimer: 0, 
+            targetX: 0, targetY: 0, cooldown: 0
+        });
+    }
+}
+
+// --- الأصوات ---
+const monsterCloseSound = new Audio('Monster_close.mp3'); monsterCloseSound.loop = true;
+const monsterAngrySound = new Audio('Monster_angry.mp3');
+const jumpscareSound = new Audio('Monster_jumpscare.mp3'); 
+const nightmareJumpscareSound = new Audio('Monster_nightmare_scare.mp3');
+const servantScareSound = new Audio('Servants_scare.mp3'); 
+const mapSound = new Audio('Mapsound.mp3');
+let breathSound = new Audio('Claire_breath.mp3'); breathSound.loop = true;
+const walkSound = new Audio('Walk.mp3'); walkSound.loop = true; walkSound.volume = 0.2; 
+
+const nightmareCloseHouseSound = new Audio('nightmare_closehouse.mp3');
+const earSound = new Audio('Ear_sound.mp3');
+
+// --- دوال مساعدة ---
+function circleRectCollide(cx, cy, cr, rx, ry, rw, rh) {
+    let testX = cx; let testY = cy;
+    if (cx < rx) testX = rx; else if (cx > rx + rw) testX = rx + rw;
+    if (cy < ry) testY = ry; else if (cy > ry + rh) testY = ry + rh;
+    let distX = cx - testX; let distY = cy - testY;
+    return (distX*distX + distY*distY) <= (cr*cr);
+}
+
+function drawRotatedImage(ctx, image, x, y, radius, angle, alpha = 1) {
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(angle - Math.PI/2); 
+    const size = radius * 2.5; ctx.drawImage(image, -size/2, -size/2, size, size);
+    ctx.restore();
+}        // ======================= القسم الثالث: منطق اللعبة الرئيسي (update, draw, events, endGame) =======================
+        
+        // --- دالة تطبيق ميزات الشخصية ---
+        function applyCharacterBonuses() {
+            let char = equippedCharacter;
+            const charData = allCharacters.find(c => c.id === char);
+            
+            // تحديث الصورة حسب الشخصية
+            updatePlayerSprite();
+            
+            // تحديث الصوت حسب الشخصية
+            if(charData) {
+                breathSound.src = charData.sound;
+            }
+            
+            // تطبيق الميزات
+            if(char === 'sprinter') {
+                player.speed = 6; 
+            } else {
+                player.speed = 5;
+            }
+            
+            if(char === 'sage') { 
+                if(!mapItem.pickedUp && !touchedMapThisRun) { 
+                    mapItem.pickedUp = true; 
+                    document.getElementById('map-icon').style.display = 'flex'; 
+                    touchedMapThisRun = true; 
+                    showNotification("🧙 The Sage: بدأت بالخريطة + تمويه 5 ثواني!");
+                } 
+                setTimeout(() => { 
+                    if(gameState==='play') {
+                        monster.state = 'patrol';
+                        showNotification("🧙 انتهى تأثير التمويه!");
+                    }
+                }, 5000); 
+            }
+        }
+        
+        // --- تحديث الصوت حسب القرب من الأعداء مع تأثير Phantom ---
+        function updateAudio() {
+            if(gameState !== 'play' || isServantJumpscareActive) return;
+            let distM = Math.hypot(player.x - monster.x, player.y - monster.y);
+            let closestS = 9999;
+            servants.forEach(s => {
+                let d = Math.hypot(player.x - s.x, player.y - s.y);
+                if(d < closestS) closestS = d;
+            });
+            
+            // تأثير شخصية Phantom: تقليل دائرة انتباه الوحش والخدم 40%
+            let detectionModifier = (equippedCharacter === 'phantom') ? 0.6 : 1.0;
+            let monsterDetectionDist = 1500 * detectionModifier;
+            let servantDetectionDist = 1200 * detectionModifier;
+            
+            if(distM < monsterDetectionDist) {
+                if(monsterCloseSound.paused) monsterCloseSound.play().catch(e=>{});
+                if(playerSlowTimer <= 0 && breathSound.paused) breathSound.play().catch(e=>{});
+                let vol = Math.pow(1 - (distM / monsterDetectionDist), 0.5);
+                monsterCloseSound.volume = vol * globalVolume;
+                let speedRate = 1 + (vol * 0.7); 
+                monsterCloseSound.playbackRate = speedRate;
+                
+                // تتبع وقت المطاردة للإنجاز
+                if(distM < 300) {
+                    if(lastChaseUpdate === 0) lastChaseUpdate = Date.now();
+                    else {
+                        let elapsed = (Date.now() - lastChaseUpdate) / 1000;
+                        if(elapsed > 0.1) {
+                            chasedTimeThisRun += elapsed;
+                            lastChaseUpdate = Date.now();
+                        }
+                    }
+                } else {
+                    lastChaseUpdate = 0;
+                }
+                
+                if(playerSlowTimer <= 0) {
+                    breathSound.volume = vol * 0.4 * globalVolume;
+                    breathSound.playbackRate = speedRate;
+                }
+            } 
+            else if(closestS < servantDetectionDist) {
+                if(monsterCloseSound.paused) monsterCloseSound.play().catch(e=>{});
+                if(playerSlowTimer <= 0) breathSound.pause();
+                let volS = Math.pow(1 - (closestS / servantDetectionDist), 0.5);
+                monsterCloseSound.volume = volS * globalVolume;
+                monsterCloseSound.playbackRate = 1.0;
+                lastChaseUpdate = 0;
+            } 
+            else {
+                monsterCloseSound.pause();
+                if(playerSlowTimer <= 0) breathSound.pause();
+                lastChaseUpdate = 0;
+            }
+        }
+        
+        // --- أحداث اللمس للعصا والأزرار ---
+        const jContainer = document.getElementById('joystick-container');
+        const jStick = document.getElementById('joystick-stick');
+        let moveX = 0, moveY = 0; let joystickTouchId = null;
+        
+        document.addEventListener('touchmove', (e) => { if(e.target === canvas) e.preventDefault(); }, {passive: false});
+        
+        jContainer.addEventListener('touchstart', (e) => {
+            e.preventDefault(); joystickTouchId = e.changedTouches[0].identifier;
+        }, {passive: false});
+        
+        window.addEventListener('touchmove', (e) => {
+            if (joystickTouchId === null) return;
+            for(let i=0; i<e.changedTouches.length; i++) {
+                if(e.changedTouches[i].identifier === joystickTouchId) {
+                    const touch = e.changedTouches[i]; 
+                    const rect = jContainer.getBoundingClientRect();
+                    const dx = touch.clientX - (rect.left + rect.width / 2); 
+                    const dy = touch.clientY - (rect.top + rect.height / 2);
+                    const dist = Math.min(60, Math.hypot(dx, dy)); 
+                    const angle = Math.atan2(dy, dx);
+                    moveX = Math.cos(angle) * (dist / 60); 
+                    moveY = Math.sin(angle) * (dist / 60);
+                    jStick.style.left = (35 + Math.cos(angle) * dist) + "px"; 
+                    jStick.style.top = (35 + Math.sin(angle) * dist) + "px";
+                    if (moveX !== 0 || moveY !== 0) player.angle = Math.atan2(moveY, moveX);
+                }
+            }
+        }, {passive: false});
+        
+        window.addEventListener('touchend', (e) => {
+            for(let i=0; i<e.changedTouches.length; i++) {
+                if(e.changedTouches[i].identifier === joystickTouchId) {
+                    joystickTouchId = null; moveX = 0; moveY = 0;
+                    jStick.style.top = "35px"; jStick.style.left = "35px";
+                }
+            }
+        });
+        
+        let actionPressed = false; let speedPressed = false;
+        document.getElementById('action-btn').addEventListener('touchstart', (e) => { e.preventDefault(); actionPressed = true; }, {passive: false});
+        document.getElementById('action-btn').addEventListener('touchend', (e) => { e.preventDefault(); actionPressed = false; });
+        document.getElementById('speed-btn').addEventListener('touchstart', (e) => { e.preventDefault(); speedPressed = true; }, {passive: false});
+        document.getElementById('speed-btn').addEventListener('touchend', (e) => { e.preventDefault(); speedPressed = false; });
+        
+        document.getElementById('throw-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if(player.stones > 0 && gameState === 'play') {
+                const dirX = Math.cos(player.angle); 
+                const dirY = Math.sin(player.angle);
+                stones.push({ x: player.x, y: player.y, vx: dirX * 15, vy: dirY * 15, life: 30 });
+                player.stones--; 
+                stonesThrownThisRun++;
+                document.getElementById('throw-btn').innerText = `رمي (${player.stones})`;
+            }
+        }, {passive: false});
+        
+        document.getElementById('map-icon').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if(!touchedMapThisRun) touchedMapThisRun = true;
+            mapSound.currentTime = 0; 
+            mapSound.volume = 0.05 * globalVolume; 
+            mapSound.play().catch(e => {});
+            document.getElementById('map-viewer').style.display = 'flex';
+        }, {passive: false});
+        
+        document.getElementById('close-map').addEventListener('touchstart', (e) => { e.preventDefault(); document.getElementById('map-viewer').style.display = 'none'; }, {passive: false});
+        document.getElementById('close-map').addEventListener('click', (e) => { document.getElementById('map-viewer').style.display = 'none'; });
+        
+        // --- دوال Jumpscare مع تأثير The Master ---
+        function triggerServantJumpscare(servant) {
+            document.getElementById('servant-jumpscare-face').innerHTML = '';
+            document.getElementById('servant-jumpscare-face').appendChild((gameMode === 'nightmare' ? servantNightmareSprite : servantSprite).cloneNode());
+
+            // تأثير شخصية The Master: حصانة من هجمات الخدم
+            if(equippedCharacter === 'master') {
+                servant.x = (player.x < 2000) ? WORLD.width - 500 : 500;
+                servant.y = (player.y < 1500) ? WORLD.height - 500 : 500;
+                servant.cooldown = 300;
+                showNotification("🛡️ The Master: حصانة من هجوم الخادم!");
+                return;
+            }
+            
+            isServantJumpscareActive = true; gameState = 'servant_jumpscare'; 
+            monsterCloseSound.pause(); walkSound.pause(); 
+            servantScareSound.currentTime = 0; 
+            servantScareSound.volume = 1 * globalVolume; 
+            servantScareSound.play().catch(e => {});
+            servantCollisionHappened = true;
+            
+            document.getElementById('servant-jumpscare-screen').style.display = 'flex';
+            setTimeout(() => { document.getElementById('servant-jumpscare-face').style.animation = "scaryShake 0.05s infinite"; }, 50);
+            
+            setTimeout(() => { 
+                document.getElementById('servant-jumpscare-screen').style.display = 'none'; 
+                document.getElementById('servant-jumpscare-face').style.animation = "none"; 
+                gameState = 'play'; 
+                isServantJumpscareActive = false; 
+                playerSlowTimer = 600; 
+                
+                if (gameMode === 'nightmare') {
+                    earSound.play().catch(e=>{});
+                    isScreenDarkened = true;
+                    screenDarknessLevel = 0.95; // شاشة مظلمة تقريباً بالكامل
+                    breathSound.playbackRate = 1.8; // تنفس سريع جداً
+                }
+                
+                breathSound.volume = 1.0 * globalVolume; 
+                if(breathSound.paused) breathSound.play().catch(e=>{});
+                
+                servant.x = (player.x < 2000) ? WORLD.width - 500 : 500; 
+                servant.y = (player.y < 1500) ? WORLD.height - 500 : 500;
+                servant.cooldown = 600; 
+                servant.state = 'patrol';
+                monster.targetX = player.x; 
+                monster.targetY = player.y; 
+                monster.state = 'investigate'; 
+                requestAnimationFrame(draw); 
+            }, 1000); 
+        }
+        
+        function triggerJumpscare() {
+            document.getElementById('jumpscare-face').innerHTML = '';
+            document.getElementById('jumpscare-face').appendChild((gameMode === 'nightmare' ? monsterNightmareSprite : monsterSprite).cloneNode());
+
+            gameState = 'jumpscare'; 
+            monsterCloseSound.pause(); breathSound.pause(); walkSound.pause(); 
+            let currentJumpscareSound = (gameMode === 'nightmare') ? nightmareJumpscareSound : jumpscareSound;
+            currentJumpscareSound.volume = 1 * globalVolume; 
+            currentJumpscareSound.play().catch(e => {});
+            document.getElementById('jumpscare-screen').style.display = 'flex';
+            setTimeout(() => { document.getElementById('jumpscare-face').style.animation = "scaryShake 0.05s infinite"; }, 50);
+            setTimeout(() => { 
+                document.getElementById('jumpscare-screen').style.display = 'none'; 
+                document.getElementById('jumpscare-face').style.animation = "none"; 
+                
+                if (currentLivesInGame > 0) {
+                    currentLivesInGame--;
+                    showNotification(`نجوت من الموت! تبقى لك ${currentLivesInGame} فرصة ❤️`);
+                    gameState = 'play';
+                    // إبعاد الوحش قليلاً حتى لا يمسك اللاعب فوراً
+                    monster.x = (player.x < 2000) ? WORLD.width - 500 : 500;
+                    monster.y = (player.y < 1500) ? WORLD.height - 500 : 500;
+                    monster.state = 'patrol';
+                    if (breathSound.paused) breathSound.play().catch(e=>{});
+                    requestAnimationFrame(draw);
+                } else {
+                    endGame("أكلك الوحش!", false); 
+                }
+            }, 1500);
+        }
+        
+                function endGame(msg, win=false) {
+            monsterCloseSound.pause(); 
+            breathSound.pause(); 
+            walkSound.pause(); 
+            
+            document.getElementById('map-icon').style.display = 'none'; 
+            document.getElementById('map-viewer').style.display = 'none'; 
+            
+            let statsHtml = `<br><div style="font-size:18px; color:white; background:rgba(255,255,255,0.1); padding:10px; border-radius:10px; margin-top:10px; text-align:right; direction:rtl;">`;
+            statsHtml += `📊 إحصائيات الجولة:<br>`;
+            statsHtml += `🍎 تفاح مأكول: ${applesEatenCount}<br>`;
+            statsHtml += `🪨 أحجار مرمية: ${stonesThrownThisRun}<br>`;
+            statsHtml += `🎯 خدم أصيبوا: ${servantsHitThisRun}<br>`;
+            statsHtml += `⏱️ وقت المطاردة: ${Math.floor(chasedTimeThisRun)} ثانية`;
+            statsHtml += `</div>`;
+
+            document.getElementById('game-title').innerText = msg;
+            document.getElementById('game-title').style.color = win ? "#00ff00" : "#ff0000";
+            
+            if (gameMode === 'score') {
+                let survivalTime = Math.floor((Date.now() - survivalStartTime) / 1000);
+                let finalScore = scorePoints + survivalTime;
+                let rewardSkulls = Math.floor(finalScore / 100) * 10; // كل 100 سكور = 10 جماجم وإهمال الكسور
+                
+                statsHtml += `<br><br>🏆 <span style="color:gold;">السكور النهائي: ${finalScore} نقطة</span>`;
+                statsHtml += `<br>💀 <span style="color:#00ff00;">جماجم السكور: +${rewardSkulls}</span>`;
+                
+                document.getElementById('game-over-tips').innerHTML = statsHtml;
+
+                if (rewardSkulls > 0) {
+                    addSkulls(rewardSkulls);
+                    showNotification(`حصلت على ${rewardSkulls} جمجمة من وضع السكور! 💀`);
+                }
+                
+                if (win) checkAchievementsDuringRun(true);
+            } else {
+                document.getElementById('game-over-tips').innerHTML = statsHtml;
+                if(win) {
+                    let reward = 0;
+                    if (gameMode === 'nightmare') reward = 300;
+                    else if (currentDifficultyLevel === 'easy') reward = 10;
+                    else if (currentDifficultyLevel === 'normal') reward = 25;
+                    else if (currentDifficultyLevel === 'hard') {
+                        reward = 50;
+                        if (!localStorage.getItem('ert_hard_won')) {
+                            localStorage.setItem('ert_hard_won', 'true');
+                            showNotification("🔓 تم فتح وضع السكور!");
+                        }
+                    }
+                    else if (currentDifficultyLevel === 'impossible') {
+                        reward = 100;
+                        if (!localStorage.getItem('ert_hard_won')) localStorage.setItem('ert_hard_won', 'true'); // يفتح السكور احتياطياً
+                        if (!localStorage.getItem('ert_impossible_won')) {
+                            localStorage.setItem('ert_impossible_won', 'true');
+                            showNotification("🔓 تم فتح وضع الكابوس 🩸!");
+                        }
+                    }
+
+                    addSkulls(reward);
+                    showNotification(`كفو! حصلت على ${reward} جمجمة 💀`);
+                    checkAchievementsDuringRun(true);
+                }
+            }
+            showMenu('screens');
+        }
+
+
+        
+        // --- دالة التحديث الرئيسية (update) مع تأثير Phantom ---
+        function update() {
+            if(gameState !== 'play') return;
+            
+            let isMoving = (moveX !== 0 || moveY !== 0);
+            if(!isMoving && Date.now() - lastMoveTime > 100) runTimeWithoutStop = false;
+            if(isMoving) lastMoveTime = Date.now();
+            
+            let currentSpeed = speedPressed && player.hunger > 0 && isMoving ? (player.speed * 1.6) : player.speed;
+            
+            // ميزة شخصية المجنون
+            if (equippedCharacter === 'madman' && speedPressed && player.hunger > 0 && isMoving) {
+                let distToMonsterForMadman = Math.hypot(player.x - monster.x, player.y - monster.y);
+                if (distToMonsterForMadman < 100) {
+                    currentSpeed *= 1.6; // زيادة سرعة الركض بنسبة 60% إضافية للنجاة
+                }
+            }
+            
+            if (playerSlowTimer > 0) {
+                currentSpeed *= 0.35; 
+                playerSlowTimer--;
+                if(breathSound.paused) {
+                    breathSound.volume = 1.0 * globalVolume; 
+                    breathSound.play().catch(e=>{});
+                }
+            }
+            
+            let currentHungerDrain = speedPressed && isMoving ? 0.15 : 0.025;
+            
+            if (isMoving) {
+                if (walkSound.paused) walkSound.play().catch(e => {});
+                walkSound.playbackRate = speedPressed ? 1.5 : 1.0; 
+            } else {
+                walkSound.pause(); 
+                walkSound.currentTime = 0;
+            }
+            
+            let nextX = player.x + moveX * currentSpeed; 
+            let nextY = player.y + moveY * currentSpeed;
+            
+            if(nextX < player.rad) nextX = player.rad; 
+            if(nextY < player.rad) nextY = player.rad;
+            if(nextX > WORLD.width - player.rad) nextX = WORLD.width - player.rad;
+            if(nextY > WORLD.height - player.rad) nextY = WORLD.height - player.rad;
+            
+            let isHiding = false;
+            trees.forEach(t => {
+                let d = Math.hypot(nextX - t.x, nextY - t.y);
+                let hitRadius = (player.rad * 0.5) + (t.r * 0.5);
+                if (d < hitRadius) {
+                    let overlap = hitRadius - d; 
+                    let angle = Math.atan2(nextY - t.y, nextX - t.x);
+                    nextX += Math.cos(angle) * overlap; 
+                    nextY += Math.sin(angle) * overlap;
+                }
+                if(Math.hypot(player.x - t.x, player.y - t.y) < t.r + 40) isHiding = true;
+            });
+            
+            if (gameMode !== 'score') {
+                let houseLocked = (gameMode === 'nightmare' && nightmarePhase === 0);
+                houseWalls.forEach(w => {
+                    if(circleRectCollide(nextX, nextY, player.rad * 0.5, w.x, w.y, w.w, w.h)) { 
+                        nextX = player.x; 
+                        nextY = player.y; 
+                    }
+                });
+                // إغلاق مدخل البيت في وضع الكابوس حتى تجمع العناصر
+                if (houseLocked && circleRectCollide(nextX, nextY, player.rad * 0.5, monsterHouse.x, monsterHouse.y, monsterHouse.w, monsterHouse.h)) {
+                    nextX = player.x;
+                    nextY = player.y;
+                }
+            }
+            
+            player.x = nextX; 
+            player.y = nextY;
+            view.x = player.x - window.innerWidth / 2; 
+            view.y = player.y - window.innerHeight / 2;
+            
+            player.hunger -= currentHungerDrain;
+            if(player.hunger <= 0) endGame("انتهت طاقتك من الجوع!", false);
+            
+            // تحديث الحد الأدنى للجوع
+            if(player.hunger < minHungerReached) minHungerReached = player.hunger;
+            
+            let barWidth = (player.hunger / maxHunger) * 100;
+            document.getElementById('hunger-bar').style.width = Math.max(0, barWidth) + "%";
+            document.getElementById('hunger-container').style.width = (maxHunger * 1.8) + "px"; 
+            
+            const flashScreen = document.getElementById('low-energy-flash');
+            const hungerMsg = document.getElementById('hunger-warning');
+            if (player.hunger > 0 && player.hunger <= 25) {
+                let isVisible = (Math.floor(Date.now() / 400) % 2 === 0);
+                flashScreen.style.display = isVisible ? 'block' : 'none';
+                hungerMsg.style.display = isVisible ? 'block' : 'none';
+            } else {
+                flashScreen.style.display = 'none'; 
+                hungerMsg.style.display = 'none';
+            }
+            
+            // التقاط الخريطة
+            if (!mapItem.pickedUp && Math.hypot(player.x - mapItem.x, player.y - mapItem.y) < player.rad + mapItem.rad) {
+                mapItem.pickedUp = true; 
+                document.getElementById('map-icon').style.display = 'flex';
+            }
+            
+            // أكل التفاح
+            for (let i = apples.length - 1; i >= 0; i--) {
+                if (Math.hypot(player.x - apples[i].x, player.y - apples[i].y) < player.rad + apples[i].r) {
+                    apples.splice(i, 1); 
+                    player.hunger = Math.min(maxHunger, player.hunger + 15);
+                    applesEatenCount++;
+                    if (gameMode === 'score') scorePoints += 50;
+                }
+            }
+            
+            // التفاحة الذهبية
+            if(goldenApple.active && Math.hypot(player.x - goldenApple.x, player.y - goldenApple.y) < player.rad + goldenApple.r) {
+                goldenApple.active = false; 
+                maxHunger = 200; 
+                player.hunger = 200;
+                goldenEatenThisRun = true;
+                showNotification("✨ التقطت التفاحة الذهبية! الحد الأقصى للجوع 200 ✨");
+            }
+            // عناصر الكابوس
+            if (gameMode === 'nightmare') {
+                if (nightmarePhase === 0) {
+                    let itemsCollected = 0;
+                    nightmareItems.forEach(item => {
+                        if (!item.picked) {
+                            if (Math.hypot(player.x - item.x, player.y - item.y) < player.rad + 20) {
+                                item.picked = true;
+                                showNotification(`🩸 التقطت: ${item.name}`);
+                            }
+                        } else {
+                            itemsCollected++;
+                        }
+                    });
+                    if (itemsCollected === 3) {
+                        nightmarePhase = 1;
+                        showNotification("لقد جمعت العناصر! بيت الوحش مفتوح الآن. ابحث عن المفتاح!");
+                    }
+                } else if (nightmarePhase === 1 && !nightmareKey.picked) {
+                    if (Math.hypot(player.x - nightmareKey.x, player.y - nightmareKey.y) < player.rad + 20) {
+                        nightmareKey.picked = true;
+                        nightmarePhase = 2;
+                        nightmareCloseHouseSound.play().catch(e=>{});
+                        currentSettings.mChase = 6.5; // جنون الوحش
+                        currentSettings.mAngry = 7.5;
+                        showNotification("لقد أخذت المفتاح! اهرب إلى البوابة فوراً!!");
+                    }
+                }
+                
+                // التحكم الصعب والظلام التدريجي وتأثيرات الكابوس
+                if (nightmarePhase === 2) {
+                    if (Math.random() < 0.02) { player.angle += (Math.random() - 0.5) * 0.5; } // صعوبة في التحكم
+                }
+                
+                if (isScreenDarkened) {
+                    screenDarknessLevel = Math.max(0, screenDarknessLevel - 0.005);
+                    if (screenDarknessLevel <= 0) isScreenDarkened = false;
+                }
+            }
+
+                    // جمع صناديق الحجارة
+            for (let i = stoneCrates.length - 1; i >= 0; i--) {
+                if (Math.hypot(player.x - stoneCrates[i].x, player.y - stoneCrates[i].y) < player.rad + stoneCrates[i].r) {
+                    stoneCrates.splice(i, 1);
+                    player.stones += 3;
+                    document.getElementById('throw-btn').innerText = `رمي (${player.stones})`;
+                    showNotification("🪨 التقطت حجارة!");
+                }
+            }
+    
+            // الحجارة وإصابة الخدم
+            stones.forEach((s,i) => { 
+                s.x += s.vx; 
+                s.y += s.vy; 
+                s.life--; 
+                let hitServant = false;
+                servants.forEach(servant => {
+                    if (Math.hypot(s.x - servant.x, s.y - servant.y) < servant.rad + 10) {
+                        hitServant = true;
+                        servantsHitThisRun++;
+                        servant.x = (player.x < 2000) ? WORLD.width - 500 : 500;
+                        servant.y = (player.y < 1500) ? WORLD.height - 500 : 500;
+                        servant.cooldown = 300; 
+                        servant.state = 'patrol';
+                    }
+                });
+                
+                   if(hitServant) {
+                    noises.push({x: s.x, y: s.y, t: 150}); 
+                    stones.splice(i,1);
+                    if (gameMode === 'score') scorePoints += 100;
+                } else if(s.life <= 0) { 
+                 noises.push({x: s.x, y: s.y, t: 150}); 
+                    stones.splice(i,1); 
+                }
+            });
+            
+            noises.forEach((n,i) => { n.t--; if(n.t<=0) noises.splice(i,1); });
+            
+            // التقاط اللحم
+            let distF = Math.hypot(player.x - food.x, player.y - food.y);
+            const actionBtn = document.getElementById('action-btn');
+            if(gameMode !== 'score' && distF < 100 && !player.hasFood) {
+                actionBtn.style.display = 'flex'; 
+                if(actionPressed) {
+                    food.progress += 2.5; 
+                    if(food.progress >= 100) { 
+                        player.hasFood = true; 
+                        food.grabbed = true; 
+                        actionBtn.style.display = 'none';
+                        monsterAngrySound.currentTime = 0; 
+                        monsterAngrySound.volume = 1 * globalVolume; 
+                        monsterAngrySound.play().catch(e => {});
+                        const runText = document.getElementById('run-warning');
+                        if(runText) { 
+                            runText.style.display = 'block'; 
+                            setTimeout(() => { runText.style.display = 'none'; }, 4000); 
+                        }
+                    }
+                }
+            } else { 
+                actionBtn.style.display = 'none'; 
+            }
+            
+                  // الفوز
+            if (gameMode === 'nightmare') {
+                let distToGate = Math.hypot(player.x - (theGate.x + theGate.w/2), player.y - (theGate.y + theGate.h/2));
+                if (nightmarePhase === 2 && distToGate < 100) {
+                    document.getElementById('win-container').style.display = 'block';
+                    winTimer += 1;
+                    document.getElementById('win-bar').style.width = Math.min(100, (winTimer/90)*100) + "%"; 
+                    if(winTimer >= 90) { 
+                        endGame("نجوت من الكابوس! فوز أسطوري!", true); 
+                        return; 
+                    }
+                } else {
+                    document.getElementById('win-container').style.display = 'none';
+                    winTimer = 0;
+                }
+            } else if (gameMode !== 'score') {
+                let distC = Math.hypot(player.x - (cabin.x + 50), player.y - (cabin.y + 50));
+                if(distC < 80 && player.hasFood) {
+                    document.getElementById('win-container').style.display = 'block';
+                    winTimer += 1; 
+                    document.getElementById('win-bar').style.width = Math.min(100, (winTimer/90)*100) + "%"; 
+                    if(winTimer >= 90) { 
+                        endGame("لقد فزت! هربت باللحم!", true); 
+                        return; 
+                    }
+                } else {
+                    document.getElementById('win-container').style.display = 'none'; 
+                    winTimer = 0;
+                }
+            }
+          // تتبع البقاء في بيت الوحش
+            let inHouse = player.x > monsterHouse.x && player.x < monsterHouse.x + monsterHouse.w && 
+                          player.y > monsterHouse.y && player.y < monsterHouse.y + monsterHouse.h;
+            if(inHouse) {
+                inMonsterHouseTimer++;
+            } else {
+                inMonsterHouseTimer = 0;
+            }
+            
+            // منطق الوحش مع تأثير Phantom
+            let distM = Math.hypot(player.x - monster.x, player.y - monster.y);
+            let detectionModifier = (equippedCharacter === 'phantom') ? 0.6 : 1.0;
+            let detectRadius = (isHiding && !speedPressed) ? (220 * detectionModifier) : (450 * detectionModifier);
+            
+                        let mSpd = player.hasFood ? currentSettings.mAngry : currentSettings.mChase;
+            if (gameMode === 'score') {
+                mSpd += (currentScoreLevel * 0.2); // زيادة السرعة بمقدار 0.2 لكل ليفل
+            }
+
+            
+            if (inHouse || player.hasFood || distM < detectRadius) {
+                monster.state = 'chase'; 
+                noises = []; 
+            } else if (noises.length > 0) {
+                monster.state = 'investigate'; 
+                monster.targetX = noises[0].x; 
+                monster.targetY = noises[0].y;
+            } else if (monster.state !== 'investigate' || (monster.state === 'investigate' && monster.waitTimer <= 0)) {
+                monster.state = 'patrol';
+            }
+            
+            if(monster.state === 'chase') {
+                monster.angle = Math.atan2(player.y - monster.y, player.x - monster.x);
+                monster.x += Math.cos(monster.angle) * mSpd; 
+                monster.y += Math.sin(monster.angle) * mSpd;
+                if(distM < (player.rad * 0.5) + (monster.rad * 0.5)) triggerJumpscare();
+            } 
+            else if(monster.state === 'investigate') {
+                let distToTarget = Math.hypot(monster.targetX - monster.x, monster.targetY - monster.y);
+                if (distToTarget > 15) {
+                    monster.angle = Math.atan2(monster.targetY - monster.y, monster.targetX - monster.x);
+                    monster.x += Math.cos(monster.angle) * currentSettings.mChase; 
+                    monster.y += Math.sin(monster.angle) * currentSettings.mChase;
+                } else {
+                    if (noises.length > 0) noises.shift(); 
+                    if (monster.waitTimer <= 0) monster.waitTimer = 180; 
+                    monster.waitTimer--; 
+                    monster.angle += 0.04; 
+                }
+            }
+            else if (monster.state === 'patrol') {
+                if (monster.waitTimer > 0) {
+                    monster.waitTimer--; 
+                    monster.angle += 0.02; 
+                } else {
+                    let distToTarget = Math.hypot(monster.targetX - monster.x, monster.targetY - monster.y);
+                    if (distToTarget > 10) {
+                        monster.angle = Math.atan2(monster.targetY - monster.y, monster.targetX - monster.x);
+                        monster.x += Math.cos(monster.angle) * monster.speed; 
+                        monster.y += Math.sin(monster.angle) * monster.speed;
+                    } else {
+                        monster.targetX = Math.random() * (WORLD.width - 400) + 200; 
+                        monster.targetY = Math.random() * (WORLD.height - 400) + 200;
+                        monster.waitTimer = 120; 
+                    }
+                }
+            }
+            
+            // منطق الخدم مع تأثير Phantom
+            servants.forEach(servant => {
+                if (servant.cooldown > 0) servant.cooldown--;
+                
+                let distS = Math.hypot(player.x - servant.x, player.y - servant.y);
+                let servantDetectRadius = (isHiding && !speedPressed) ? (150 * detectionModifier) : (300 * detectionModifier);
+                
+                if (distS < servantDetectRadius && servant.cooldown <= 0) {
+                    servant.state = 'chase';
+                } else if (distS > 400 && servant.cooldown <= 0) {
+                    servant.state = 'patrol';
+                }
+                
+                if (servant.state === 'chase' && servant.cooldown <= 0) {
+                    servant.angle = Math.atan2(player.y - servant.y, player.x - servant.x);
+                    let randomSway = (Math.random() - 0.5) * 1.5; 
+                    servant.x += Math.cos(servant.angle + randomSway) * (currentSettings.mSpeed * 1.1);
+                    servant.y += Math.sin(servant.angle + randomSway) * (currentSettings.mSpeed * 1.1);
+                    
+                    if (distS < (player.rad * 0.5) + (servant.rad * 0.5)) triggerServantJumpscare(servant);
+                } else {
+                    if (servant.waitTimer > 0) {
+                        servant.waitTimer--; 
+                        servant.angle += 0.05; 
+                    } else {
+                        let distToTarget = Math.hypot(servant.targetX - servant.x, servant.targetY - servant.y);
+                        if (distToTarget > 10) {
+                            servant.angle = Math.atan2(servant.targetY - servant.y, servant.targetX - servant.x);
+                            servant.x += Math.cos(servant.angle) * (currentSettings.mSpeed * 0.8); 
+                            servant.y += Math.sin(servant.angle) * (currentSettings.mSpeed * 0.8);
+                        } else {
+                            servant.targetX = Math.random() * (WORLD.width - 400) + 200; 
+                            servant.targetY = Math.random() * (WORLD.height - 400) + 200;
+                            servant.waitTimer = 90; 
+                        }
+                    }
+                }
+            });
+            
+            // تحديث واجهة السكور (نقطة لكل ثانية صمود)
+            if (gameMode === 'score') {
+                let survivalTime = Math.floor((Date.now() - survivalStartTime) / 1000);
+                let currentScore = scorePoints + survivalTime;
+                document.getElementById('score-counter').innerText = `🏆 السكور: ${currentScore}`;
+                
+                // تحديث أعلى سكور
+                if (currentScore > highScore) {
+                    highScore = currentScore;
+                    localStorage.setItem('ert_highscore', highScore);
+                    document.getElementById('high-score-counter').innerText = `👑 أعلى سكور: ${highScore}`;
+                }
+
+                // زيادة الصعوبة كل 1000 نقطة
+                let newLevel = Math.floor(currentScore / 1000);
+                if (newLevel > currentScoreLevel) {
+                    currentScoreLevel = newLevel;
+                    showNotification("الوحش يغضب.. السرعة زادت! 🔥");
+                }
+                
+                // رسبنة التفاح
+                if (apples.length < currentSettings.apples / 2 && Math.random() < 0.05) {
+                    apples.push({x: Math.random() * (WORLD.width - 200) + 100, y: Math.random() * (WORLD.height - 200) + 100, r: 8});
+                }
+                
+                // رسبنة الحجارة
+                if (stoneCrates.length < 15 && Math.random() < 0.01) {
+                    stoneCrates.push({x: Math.random() * (WORLD.width - 200) + 100, y: Math.random() * (WORLD.height - 200) + 100, r: 12});
+                }
+            }
+
+            updateAudio();
+        }
+        
+        // --- دالة الرسم (draw) ---
+        function draw() {
+            if(gameState !== 'play') return;
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+            
+            // رسم الأرضية
+            let sX = Math.floor(view.x / 40) * 40; 
+            let sY = Math.floor(view.y / 40) * 40;
+            for (let x = sX; x < view.x + canvas.width + 40; x += 40) {
+                for (let y = sY; y < view.y + canvas.height + 40; y += 40) {
+                    let rand = Math.abs((x * 73856 + y * 19349)) % 3;
+                    ctx.fillStyle = (rand === 0) ? '#0b1a0b' : (rand === 1 ? '#102510' : '#1a2e1a');
+                    ctx.fillRect(x - view.x, y - view.y, 40, 40);
+                }
+            }
+            
+            ctx.strokeStyle = '#222'; 
+            ctx.lineWidth = 20;
+            ctx.strokeRect(-view.x, -view.y, WORLD.width, WORLD.height);
+            
+                      // الدماء والبوابة في وضع الكابوس
+            if (gameMode === 'nightmare') {
+                bloodSpots.forEach(b => {
+                    ctx.fillStyle = 'rgba(139, 0, 0, 0.4)'; // دماء مرعبة
+                    ctx.beginPath();
+                    ctx.arc(b.x - view.x, b.y - view.y, b.r, 0, Math.PI*2);
+                    ctx.fill();
+                });
+                // رسم البوابة
+                ctx.fillStyle = '#444';
+                ctx.fillRect(theGate.x - view.x, theGate.y - view.y, theGate.w, theGate.h);
+                ctx.fillStyle = '#fff';
+                ctx.font = '20px Arial';
+                ctx.fillText('🚪 بوابة النجاة', theGate.x - view.x + 20, theGate.y - view.y - 10);
+            }
+
+            // الكوخ وبيت الوحش واللحم
+            if (gameMode !== 'score') {
+           ctx.fillStyle = '#3d2b1f'; 
+                ctx.fillRect(cabin.x - view.x, cabin.y - view.y, cabin.w, cabin.h);
+                ctx.fillStyle = '#1a0000'; 
+                ctx.fillRect(monsterHouse.x - view.x, monsterHouse.y - view.y, monsterHouse.w, monsterHouse.h);
+                ctx.fillStyle = '#330000'; 
+                houseWalls.forEach(w => { ctx.fillRect(w.x - view.x, w.y - view.y, w.w, w.h); });
+                
+                if(gameMode !== 'nightmare' && !food.grabbed) { 
+                    ctx.fillStyle = '#ff6600'; 
+                    ctx.beginPath(); 
+                    ctx.arc(food.x - view.x, food.y - view.y, food.rad, 0, Math.PI*2); 
+                    ctx.fill(); 
+                }
+                
+                if (gameMode === 'nightmare') {
+                    if (nightmarePhase === 0) {
+                        nightmareItems.forEach(item => {
+                            if (!item.picked) {
+                                ctx.fillStyle = item.color;
+                                ctx.beginPath();
+                                ctx.arc(item.x - view.x, item.y - view.y, 15, 0, Math.PI*2);
+                                ctx.fill();
+                                ctx.fillStyle = 'white';
+                                ctx.font = '12px Arial';
+                                ctx.fillText(item.name, item.x - view.x - 15, item.y - view.y - 20);
+                            }
+                        });
+                    } else if (nightmarePhase === 1 && !nightmareKey.picked) {
+                        ctx.fillStyle = 'gold';
+                        ctx.fillRect(nightmareKey.x - view.x - 10, nightmareKey.y - view.y - 10, 20, 20);
+                        ctx.fillStyle = 'white';
+                        ctx.fillText('🔑 مفتاح الهروب', nightmareKey.x - view.x - 30, nightmareKey.y - view.y - 20);
+                    }
+                }
+            }
+            
+            // رسم صناديق الحجارة
+            stoneCrates.forEach(sc => {
+                ctx.fillStyle = '#555';
+                ctx.fillRect(sc.x - view.x - sc.r, sc.y - view.y - sc.r, sc.r * 2, sc.r * 2);
+                ctx.fillStyle = '#aaa';
+                ctx.font = '12px Arial';
+                ctx.fillText('🪨', sc.x - view.x - 6, sc.y - view.y + 4);
+            });
+            
+            // الخريطة
+            if (!mapItem.pickedUp) {
+                ctx.fillStyle = '#e6ccaa'; 
+                ctx.fillRect(mapItem.x - view.x - 10, mapItem.y - view.y - 15, 20, 30);
+                ctx.strokeStyle = '#8b4513'; 
+                ctx.lineWidth = 2; 
+                ctx.strokeRect(mapItem.x - view.x - 10, mapItem.y - view.y - 15, 20, 30);
+            }
+            
+            // الأشجار
+            trees.forEach(t => { 
+                ctx.fillStyle = (gameMode === 'nightmare') ? '#4b3621' : '#0a3d0a'; // بني جاف في الكابوس
+                ctx.beginPath(); 
+                ctx.arc(t.x - view.x, t.y - view.y, t.r, 0, Math.PI*2); 
+                ctx.fill(); 
+            });
+            
+            // التفاح
+            apples.forEach(a => { 
+                ctx.fillStyle = '#ff3333'; 
+                ctx.beginPath(); 
+                ctx.arc(a.x - view.x, a.y - view.y, a.r, 0, Math.PI*2); 
+                ctx.fill(); 
+            });
+            
+            // التفاحة الذهبية
+            if(goldenApple.active) {
+                ctx.fillStyle = '#ffd700'; 
+                ctx.fillRect(goldenApple.x - view.x - 15, goldenApple.y - view.y - 15, 30, 30);
+                ctx.strokeStyle = 'white'; 
+                ctx.lineWidth = 2; 
+                ctx.strokeRect(goldenApple.x - view.x - 15, goldenApple.y - view.y - 15, 30, 30);
+            }
+            
+            // الحجارة
+            stones.forEach(s => { 
+                ctx.fillStyle='#888'; 
+                ctx.beginPath(); 
+                ctx.arc(s.x-view.x, s.y-view.y, 6, 0, Math.PI*2); 
+                ctx.fill(); 
+            });
+            
+            // الوحش والخدم
+            let currentMonsterSprite = (gameMode === 'nightmare') ? monsterNightmareSprite : monsterSprite;
+            let currentServantSprite = (gameMode === 'nightmare') ? servantNightmareSprite : servantSprite;
+            
+            drawRotatedImage(ctx, currentMonsterSprite, monster.x - view.x, monster.y - view.y, monster.rad, monster.angle);
+            servants.forEach(s => { drawRotatedImage(ctx, currentServantSprite, s.x - view.x, s.y - view.y, s.rad, s.angle); });
+            
+            // اللاعب مع تأثير التخفي
+            const pAlpha = (trees.some(t => Math.hypot(player.x - t.x, player.y - t.y) < t.r + 40) && !speedPressed) ? 0.6 : 1;
+            drawRotatedImage(ctx, playerSprite, player.x - view.x, player.y - view.y, player.rad, player.angle, pAlpha);
+            
+            // تأثير الظلام وتوهج الخطر
+            let inH = false;
+            if (gameMode !== 'score') {
+                inH = player.x > monsterHouse.x && player.x < monsterHouse.x + monsterHouse.w && 
+                      player.y > monsterHouse.y && player.y < monsterHouse.y + monsterHouse.h;
+            }
+            if (!inH) {
+                const g = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 120, canvas.width/2, canvas.height/2, Math.min(canvas.width, canvas.height) * 0.9);
+                g.addColorStop(0, 'transparent'); 
+                
+                // توهج الخطر في وضع السكور
+                if (gameMode === 'score' && currentScoreLevel > 0) {
+                    let glowAlpha = Math.min(0.5, currentScoreLevel * 0.05);
+                    g.addColorStop(1, `rgba(${Math.floor(glowAlpha * 255)}, 0, 0, 0.92)`);
+                } else {
+                    g.addColorStop(1, 'rgba(0,0,0,0.92)');
+                }
+                
+                ctx.fillStyle = g; 
+                ctx.fillRect(0,0, canvas.width, canvas.height);
+                
+                // إضافة طبقة الظلام المرعبة بعد هجوم الخدم في الكابوس
+                if (gameMode === 'nightmare' && isScreenDarkened) {
+                    ctx.fillStyle = `rgba(0, 0, 0, ${screenDarknessLevel})`;
+                    ctx.fillRect(0,0, canvas.width, canvas.height);
+                }
+            }
+            
+            requestAnimationFrame(() => { if(gameState==='play') { update(); draw(); } });
+        }
+        
+        // --- بدء اللعبة ---
+        document.getElementById('start-btn').onclick = () => {
+            if (imagesLoaded < totalImages) { alert("تحميل الصور..."); return; }
+            currentSettings = diffSettings[document.getElementById('difficulty-select').value];
+            currentDifficultyLevel = document.getElementById('difficulty-select').value;
+                         scorePoints = 0;
+            survivalStartTime = Date.now();
+               if (gameMode === 'score') {
+                WORLD.width = 6000;
+                WORLD.height = 4500;
+                document.getElementById('score-counter').style.display = 'block';
+                document.getElementById('score-counter').innerText = `🏆 السكور: 0`;
+                document.getElementById('high-score-counter').style.display = 'block';
+                document.getElementById('high-score-counter').innerText = `👑 أعلى سكور: ${highScore}`;
+            } else {
+                WORLD.width = 4000;
+                WORLD.height = 3000;
+                document.getElementById('score-counter').style.display = 'none';
+                document.getElementById('high-score-counter').style.display = 'none';
+            }
+            currentScoreLevel = 0;
+            stoneCrates = [];
+         
+
+            // إعادة تعيين المتغيرات
+            player.x = 200; player.y = 200; 
+            player.hunger = 100; 
+            maxHunger = 100; 
+            player.stones = currentSettings.stones; 
+            player.hasFood = false;
+            food.grabbed = false; 
+            stones = []; 
+            noises = []; 
+            winTimer = 0; 
+            playerSlowTimer = 0; 
+            isServantJumpscareActive = false;
+            
+            if (properties.extraLives.active) {
+                currentLivesInGame = 3;
+                properties.extraLives.active = false; // تعطيلها بعد الاستخدام لكي يتم شراؤها مجدداً للجولة القادمة
+                saveProperties();
+                showNotification("تم تفعيل 3 أرواح لهذه الجولة! ❤️");
+            } else {
+                currentLivesInGame = 0;
+            }
+            
+            monster.x = 3500; monster.y = 2500; 
+            monster.targetX = monster.x; monster.targetY = monster.y;
+            monster.waitTimer = 0; 
+            monster.state = 'patrol';
+            mapItem.pickedUp = false; 
+            document.getElementById('map-icon').style.display = 'none'; 
+            document.getElementById('map-viewer').style.display = 'none';
+            document.getElementById('low-energy-flash').style.display = 'none'; 
+            document.getElementById('hunger-warning').style.display = 'none';
+            
+            resetRunTrackers();
+            spawnTrees(); 
+            spawnApples(); 
+            spawnServants(); 
+            applyCharacterBonuses();
+                  if (gameMode === 'nightmare') {
+                currentSettings = diffSettings.impossible;
+                nightmarePhase = 0;
+                spawnNightmareEntities();
+                player.x = theGate.x + 75; // الرسبن عند البوابة
+                player.y = theGate.y + 50;
+                monster.rad = 110; // وحش أكبر
+                servants.forEach(s => s.rad = 75); // خدم أكبر
+                showNotification("وضع الكابوس: ابحث عن العناصر الثلاثة لتفتح بيت الوحش!");
+            } else {
+                monster.rad = 90;
+                servants.forEach(s => s.rad = 60);
+            }
+
+            
+            document.getElementById('throw-btn').innerText = `رمي (${player.stones})`;
+            
+            showMenu(null);
+            gameState = 'play'; 
+            monsterCloseSound.play().catch(e => {}); 
+            requestAnimationFrame(draw);
+        };
+        
+        // --- أحداث النافذة والإعدادات ---
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+        canvas.width = window.innerWidth; 
+        canvas.height = window.innerHeight;
+        
+        document.getElementById('volume-slider').addEventListener('input', (e) => {
+            globalVolume = parseFloat(e.target.value);
+            walkSound.volume = 0.2 * globalVolume;
+        });
+        
+        document.getElementById('left-hand-toggle').addEventListener('change', (e) => {
+            if(e.target.checked) document.body.classList.add('left-handed');
+            else document.body.classList.remove('left-handed');
+        });
+        
+        document.getElementById('landscape-toggle').addEventListener('change', (e) => {
+            if(e.target.checked) {
+                if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+                if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(err => {});
+            } else {
+                if(document.exitFullscreen) document.exitFullscreen().catch(err => {});
+                if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+            }
+        });
+        
+        document.getElementById('character-select').addEventListener('change', (e) => {
+            let selected = e.target.value;
+            if(unlockedCharacters.includes(selected)) {
+                equippedCharacter = selected;
+                localStorage.setItem('ert_equipped', equippedCharacter);
+                applyCharacterBonuses();
+                showNotification(`تم تجهيز الشخصية: ${allCharacters.find(c => c.id === selected)?.name}`);
+            }
+        });
+        
+        // نظام الهدايا للمميزين مع رسائل ترحيب مخصصة
+        document.getElementById('claim-gift-btn').addEventListener('click', () => {
+            const inputVal = document.getElementById('gift-code-input').value.trim();
+            const giftUsed = localStorage.getItem('ert_special_gift_used');
+
+            if (giftUsed === 'true') {
+                showNotification("❌ عذراً، لقد استخدمت ميزة الهدايا سابقاً!");
+                return;
+            }
+
+            let welcomeMessage = "";
+
+            if (inputVal === "خالو هذي أنا لولو") {
+                welcomeMessage = "اهلين لولو ! \nهي هديتك !";
+            } else if (inputVal === "خالو هذي أنا ميمي") {
+                welcomeMessage = "اهلين ميمي ! \nهي هديتك !";
+            } else if (inputVal === "عمو أنا ليونة") {
+                welcomeMessage = "اهلين ليونة! \nهي هديتك !";
+            }
+
+            if (welcomeMessage !== "") {
+                addSkulls(10000);
+                localStorage.setItem('ert_special_gift_used', 'true');
+                alert(welcomeMessage); // تظهر رسالة الترحيب في نافذة منبثقة
+                showNotification("🎁 حصلت على 10000 جمجمة");
+                document.getElementById('gift-code-input').value = "";
+                document.getElementById('special-gift-section').style.display = 'none';
+            } else {
+                showNotification("❌ الجملة غير صحيحة، تأكد من كتابتها بدقة!");
+            }
+        });
+
+        // إخفاء قسم الهدايا إذا كان قد استخدم سابقاً
+        if(localStorage.getItem('ert_special_gift_used') === 'true') {
+            if(document.getElementById('special-gift-section')) {
+                document.getElementById('special-gift-section').style.display = 'none';
+            }
+        }
+
+        // تحميل البيانات المحفوظة
+        loadSaveData();
+    </script>
+</body>
+</html>
